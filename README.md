@@ -19,6 +19,12 @@ Netbox предназначен как простой/минималистичн
 - SSH-доступ + SFTP чтение zone-файлов — можно держать BIND на отдельном сервере  
 
 ## Установка  
+```bash
+curl -L -o install.sh https://raw.githubusercontent.com/carmahacker/NetBox/main/install.sh
+chmod +x install.sh
+sudo ./install.sh
+```
+
 
 ```bash
 git clone https://github.com/carmahacker/NetBox.git
