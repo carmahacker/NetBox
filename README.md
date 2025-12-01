@@ -1,101 +1,76 @@
 # NetBox
-NetBox integrations..
-BIND → NetBox DNS Synchronizer
 
-Скрипт для синхронизации DNS-зон с BIND-сервера в NetBox DNS Plugin через SSH.
+## Motivation  
 
-Использует:
+Netbox предназначен как простой/минималистичный DNS-менеджер для организаций с десятками-сотнями зон, когда не нужна “вся мощь” традиционных DNS-менеджеров (ldap, php-web, etc).  
 
-SSH + SFTP для чтения zone-файлов с удалённого BIND
+### Задачи, которые закрывает Netbox
 
-парсер зон, совместимый с BIND
+- BIND → NetBox синхронизация + автоматизация (через SSH / API)  
+- Единое “источниковое” хранилище конфигураций DNS-зон  
+- История изменений, экспорт/импорт, version control  
 
-API NetBox DNS Plugin (создание/обновление зон и записей)
+## Возможности  
 
-systemd timer для регулярной синхронизации
+- Импорт зон из BIND (*.zone / db.*)  
+- Парсинг zone-файлов, в том числе построенных вручную  
+- Поддержка основных типов записей DNS: A, AAAA, CNAME, MX, NS, SOA, TXT, PTR и др.  
+- HTTP API (плагин “netbox-dns”) для работы с записями и зонами  
+- SSH-доступ + SFTP чтение zone-файлов — можно держать BIND на отдельном сервере  
 
-📦 Структура репозитория
-bind_sync/
- ├── bind_netbox_sync.py
- ├── venv/                       # виртуальное окружение Python
- ├── certs/                      # (опционально) SSL сертификаты
- ├── .env                        # переменные окружения (не обязательно)
- ├── systemd/
- │     ├── bind-sync.service
- │     └── bind-sync.timer
- └── README.md
+## Установка  
 
-🚀 Установка
-1. Клонировать репозиторий
-cd /opt
-git clone https://github.com/YOUR-ORG/bind-sync.git
-cd bind-sync
-
-
-(замени YOUR-ORG на свой GitHub)
-
-2. Создать виртуальное окружение (если его нет)
+```bash
+git clone https://github.com/carmahacker/NetBox.git
+cd NetBox
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt  # либо pip install requests paramiko
+Настройка
+Скопируй example.env → .env, отредактируй:
 
+text
+Копировать код
+NETBOX_URL=https://your-netbox.example.com
+NETBOX_TOKEN=ваш_токен
 
-(если requirements.txt нет — установить основные модули)
-
-pip install requests paramiko
-
-3. Настроить окружение
-
-Создай .env:
-
-nano /opt/bind_sync/.env
-
-
-Пример:
-
-NETBOX_URL=https://odinhub-spb.pharmasyntez.com
-NETBOX_TOKEN=ВАШ_ТОКЕН
-
-SSH_HOST=ns1.pharmasyntez.com
+SSH_HOST=your-bind-server
 SSH_USER=bindreader
-SSH_KEY_PATH=/opt/netbox/.ssh/id_rsa
+SSH_KEY_PATH=/path/to/private/key
 SSH_ZONES_PATH=/etc/bind/master
 
-SYNC_SECRET_KEY=supersecret
+SYNC_SECRET_KEY=любое_секретное_слово
+Запуск вручную
+bash
+Копировать код
+./venv/bin/python3 bind_netbox_sync.py --apply --secret-key $SYNC_SECRET_KEY
+Автозапуск (systemd)
+Скопируй файлы:
 
-4. Установить systemd service + timer
-cp systemd/bind-sync.service /etc/systemd/system/
-cp systemd/bind-sync.timer /etc/systemd/system/
+bash
+Копировать код
+systemd/bind-sync.service → /etc/systemd/system/
+systemd/bind-sync.timer   → /etc/systemd/system/
+Затем:
 
+bash
+Копировать код
 systemctl daemon-reload
 systemctl enable --now bind-sync.timer
-
-
-Проверить:
-
 systemctl status bind-sync.timer
-systemctl list-timers --all | grep bind-sync
+Для ручного запуска:
 
-5. Ручной запуск
+bash
+Копировать код
 systemctl start bind-sync.service
-journalctl -u bind-sync.service -n 200 -f
+journalctl -u bind-sync.service -f
+Лицензия
+MIT
 
-🛠 Возможные настройки
-Изменить частоту синхронизации
+yaml
+Копировать код
 
-В файле:
+---
 
-/etc/systemd/system/bind-sync.timer
-
-Можно задать расписание, напр.:
-
-OnCalendar=hourly
-
-
-или
-
-OnCalendar=*-*-* 00,12:00
-
-📄 Лицензия
-
-MIT (или любая нужная — допиши при публикации)
+Если хочешь — могу собрать **полный README.md**, включающий и инструкции по Docker, и примеры `.env`, и шаблон `.service/.timer` — удобный для копирования в твой репозиторий.
+::contentReference[oaicite:2]{index=2}
